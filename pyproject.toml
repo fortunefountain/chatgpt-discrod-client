@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "chatgpt-discord"
+version = "0.1.0"
+description = ""
+authors = ["anan <anan@example.com>"]
+readme = "README.md"
+packages = [{include = "chatgpt_discord"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+discord-py = "^2.2.2"
+openai = "^0.27.2"
+poetry-dotenv = "^0.3.0"
+poetry-dotenv-plugin = "^0.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
