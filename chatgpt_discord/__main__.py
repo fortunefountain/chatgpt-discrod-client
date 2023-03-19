@@ -1,12 +1,13 @@
 import discord
 from discord.ext import commands
 import openai
-import os
 from dotenv import load_dotenv
+import os
 load_dotenv(".env")
-TOKEN = os.environ.get("TOKEN")
-GPT_API_KEY = os.environ.get("GPT_API_KEY")
 
+
+TOKEN = os.environ.get('TOKEN', "")
+GPT_API_KEY = os.environ.get('GPT_API_KEY', "")
 openai.api_key = GPT_API_KEY
 
 intents = discord.Intents.all()
@@ -15,14 +16,19 @@ intents.presences = False
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-async def query_chatgpt(prompt):
+async def query_chatgpt(prompt, message_history, bot_member):
     data = {
-        'model':'gpt-3.5-turbo',
-        'messages': [{"role": "system", "content": "You are a helpful assistant."},
-                     {"role": "user", "content": f"{prompt}"}],
-        'max_tokens': 100,
-        'temperature': 0.5,
+        'model': 'gpt-3.5-turbo',
+        'messages': [{"role": "system", "content": "You are a helpful assistant."}]
     }
+
+    for message in message_history:
+        data['messages'].append({"role": "user" if message.author != bot_member else "assistant", "content": message.content})
+
+    data['messages'].append({"role": "user", "content": prompt})
+    data['max_tokens'] = 100
+    data['temperature'] = 0.5
+
     response = openai.ChatCompletion.create(**data)
     return response.choices[0].message.content
 
@@ -32,7 +38,14 @@ async def on_ready():
 
 @bot.command(name='chatgpt')
 async def chatgpt_command(ctx, *, message: str):
-    response = await query_chatgpt(message)
+    message_history = []
+    async for prev_message in ctx.channel.history(limit=10, before=ctx.message):
+        if prev_message.author.bot:
+            continue
+        message_history.append(prev_message)
+
+    message_history.reverse()
+    response = await query_chatgpt(message, message_history, ctx.guild.me)
     await ctx.send(response)
 
 @bot.event
